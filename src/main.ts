@@ -42,7 +42,7 @@ function createWindow() {
     title: "MIMO Gateway",
     backgroundColor: "#0f172a",
     webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
+      preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
     },

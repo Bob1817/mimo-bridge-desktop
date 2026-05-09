@@ -1,17 +1,15 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
+    "module": "CommonJS",
     "outDir": "dist",
     "rootDir": "src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "declaration": false
   },
-  "include": ["src/**/*"],
-  "exclude": ["renderer", "node_modules", "dist", "src/preload.ts"]
+  "include": ["src/preload.ts"],
+  "exclude": ["node_modules", "dist"]
 }

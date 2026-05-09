@@ -13,7 +13,7 @@
   "scripts": {
     "dev": "npm run build:main && concurrently \"cd renderer && npm run dev\" \"tsc -w\" \"sleep 2 && electron dist/main.js\"",
     "build": "npm run build:main && npm run build:renderer && npm run build:electron",
-    "build:main": "tsc",
+    "build:main": "tsc && tsc -p tsconfig.preload.json && mv dist/preload.js dist/preload.cjs",
     "build:renderer": "cd renderer && npm run build",
     "build:electron": "electron-builder",
     "start": "electron dist/main.js",
@@ -47,7 +47,7 @@
     "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true },
     "files": [
       "dist/main.js",
-      "dist/preload.js",
+      "dist/preload.cjs",
       "dist/gateway/**/*",
       "dist/renderer/**/*",
       "package.json",
