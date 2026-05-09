@@ -17,7 +17,6 @@ let serverPort: number | null = null;
 let updateStatus = "idle";
 let updateInfo: Record<string, unknown> | null = null;
 
-// Capture global uncaught errors
 process.on("uncaughtException", (err) => {
   logger.error(`Uncaught exception: ${err.message}`, { stack: err.stack });
 });
@@ -32,7 +31,6 @@ function pushLog(entry: LogEntry) {
   }
 }
 
-// Subscribe to logger for real-time push
 logger.subscribe(pushLog);
 
 function createWindow() {
@@ -91,7 +89,12 @@ async function stopGateway() {
 // --- IPC ---
 
 ipcMain.handle("config:get", () => publicConfig());
-ipcMain.handle("config:save", (_e, payload) => publicConfig(saveConfig(payload || {})));
+ipcMain.handle("config:save", (_e, payload) => {
+  logger.info("Config save requested");
+  const saved = saveConfig(payload || {});
+  logger.info("Config saved", { providers: saved.providers.length, mappings: saved.modelMappings.length });
+  return publicConfig(saved);
+});
 ipcMain.handle("gateway:start", () => startGateway());
 ipcMain.handle("gateway:stop", () => stopGateway());
 ipcMain.handle("gateway:status", () => ({ running: Boolean(server), port: serverPort }));
@@ -120,19 +123,39 @@ autoUpdater.on("update-downloaded", (info: { version: string }) => { updateStatu
 autoUpdater.on("error", (err: Error) => { updateStatus = "error"; notifyUpdateStatus({ message: err.message }); logger.error(`Update error: ${err.message}`); });
 
 ipcMain.handle("app:version", () => app.getVersion());
+
+async function checkUpdateViaGitHub() {
+  const resp = await fetch("https://api.github.com/repos/Bob1817/mimo-bridge-desktop/releases/latest");
+  if (!resp.ok) throw new Error(`GitHub API ${resp.status}`);
+  const release = await resp.json() as {
+    tag_name: string;
+    html_url: string;
+    body?: string;
+    assets?: { name: string; browser_download_url: string; size: number }[];
+  };
+  const latest = (release.tag_name || "").replace(/^v/, "");
+  if (latest && latest !== app.getVersion()) {
+    updateStatus = "available";
+    updateInfo = {
+      version: latest,
+      releaseUrl: release.html_url,
+      downloadUrl: release.assets?.find((a) => a.name.endsWith(".dmg"))?.browser_download_url || release.html_url,
+      body: release.body || "",
+    };
+  } else {
+    updateStatus = "not-available";
+  }
+  notifyUpdateStatus();
+  return { ok: true };
+}
+
 ipcMain.handle("update:check", async () => {
-  try { await autoUpdater.checkForUpdates(); return { ok: true }; } catch {
+  try {
+    await autoUpdater.checkForUpdates();
+    return { ok: true };
+  } catch {
     try {
-      const resp = await fetch("https://api.github.com/repos/Bob1817/mimo-bridge-desktop/releases/latest");
-      if (!resp.ok) throw new Error(`GitHub API ${resp.status}`);
-      const release = await resp.json() as { tag_name: string; html_url: string };
-      const latest = (release.tag_name || "").replace(/^v/, "");
-      if (latest && latest !== app.getVersion()) {
-        updateStatus = "available";
-        updateInfo = { version: latest, releaseUrl: release.html_url };
-      } else { updateStatus = "not-available"; }
-      notifyUpdateStatus();
-      return { ok: true };
+      return await checkUpdateViaGitHub();
     } catch (err2: unknown) {
       updateStatus = "error";
       notifyUpdateStatus({ message: err2 instanceof Error ? err2.message : String(err2) });
@@ -140,7 +163,22 @@ ipcMain.handle("update:check", async () => {
     }
   }
 });
-ipcMain.handle("update:download", async () => { try { await autoUpdater.downloadUpdate(); return { ok: true }; } catch (e: unknown) { return { ok: false, message: e instanceof Error ? e.message : String(e) }; } });
+
+ipcMain.handle("update:download", async () => {
+  try {
+    await autoUpdater.downloadUpdate();
+    return { ok: true };
+  } catch {
+    // Fallback: open download URL in browser
+    const url = updateInfo?.downloadUrl || updateInfo?.releaseUrl;
+    if (url && typeof url === "string") {
+      shell.openExternal(url);
+      return { ok: true, browser: true };
+    }
+    return { ok: false, message: "No download URL available" };
+  }
+});
+
 ipcMain.handle("update:install", () => { autoUpdater.quitAndInstall(false, true); });
 
 // --- App Lifecycle ---

@@ -5,7 +5,7 @@ import { saveConfig, type MimoBridge } from "../api";
 const mimo = (window as unknown as { mimo: MimoBridge }).mimo;
 
 export default function Settings() {
-  const { config, updateInfo } = useStore();
+  const { config, updateInfo, version } = useStore();
   const [port, setPort] = useState(String(config.port || 8788));
   const [defaultProvider, setDefaultProvider] = useState(String(config.defaultProvider || ""));
 
@@ -28,6 +28,8 @@ export default function Settings() {
   function handleInstall() {
     mimo.installUpdate();
   }
+
+  const newVersion = updateInfo.info?.version as string | undefined;
 
   return (
     <div className="space-y-6">
@@ -59,10 +61,13 @@ export default function Settings() {
       {/* Updates */}
       <div className="bg-surface-light rounded-2xl p-5 border border-slate-700">
         <div className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-3">应用更新</div>
-        <div className="flex gap-3 items-center">
+        <div className="text-xs text-slate-500 mb-3">当前版本: v{version}</div>
+        <div className="flex gap-3 items-center flex-wrap">
           <button onClick={handleCheckUpdate} className="px-4 py-2 rounded-xl bg-surface-lighter hover:bg-slate-600 text-slate-200 text-sm font-semibold transition">检查更新</button>
           {updateInfo.status === "available" && (
-            <button onClick={handleDownload} className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition">下载更新</button>
+            <button onClick={handleDownload} className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition">
+              下载新版本 v{newVersion}
+            </button>
           )}
           {updateInfo.status === "downloading" && (
             <span className="text-sm text-blue-400">下载中... {updateInfo.percent}%</span>
@@ -73,6 +78,9 @@ export default function Settings() {
           {updateInfo.status === "not-available" && <span className="text-sm text-emerald-400">已是最新版本</span>}
           {updateInfo.status === "error" && <span className="text-sm text-red-400">检查失败</span>}
         </div>
+        {updateInfo.status === "available" && (
+          <div className="text-xs text-slate-500 mt-2">将打开浏览器下载 DMG 文件，下载后替换应用即可完成更新。</div>
+        )}
       </div>
     </div>
   );

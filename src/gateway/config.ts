@@ -40,6 +40,8 @@ const DEFAULT_MAPPINGS: ModelMapping[] = [
   { cursorModel: "deepseek-r1", providerName: "deepseek", realModel: "deepseek-reasoner" },
 ];
 
+const MASKED = "********";
+
 function defaultConfig(): AppConfig {
   return {
     port: 8788,
@@ -70,7 +72,24 @@ export function loadConfig(): AppConfig {
 
 export function saveConfig(patch: Partial<AppConfig>): AppConfig {
   ensureAppDir();
-  const next = { ...loadConfig(), ...patch };
+  const current = loadConfig();
+
+  // When saving providers, preserve existing real API keys
+  // (frontend sends masked "********" for keys it doesn't know)
+  let mergedProviders = patch.providers;
+  if (mergedProviders) {
+    mergedProviders = mergedProviders.map((p) => {
+      if (p.apiKey === MASKED || p.apiKey === "") {
+        const existing = current.providers.find((e) => e.name === p.name);
+        if (existing && existing.apiKey && existing.apiKey !== MASKED) {
+          return { ...p, apiKey: existing.apiKey };
+        }
+      }
+      return p;
+    });
+  }
+
+  const next = { ...current, ...patch, ...(mergedProviders ? { providers: mergedProviders } : {}) };
   fs.writeFileSync(CONFIG_PATH, JSON.stringify(next, null, 2));
   return next;
 }
@@ -79,7 +98,7 @@ export function publicConfig(cfg?: AppConfig) {
   const c = cfg || loadConfig();
   return {
     ...c,
-    providers: c.providers.map((p) => ({ ...p, apiKey: p.apiKey ? "********" : "" })),
+    providers: c.providers.map((p) => ({ ...p, apiKey: p.apiKey ? MASKED : "" })),
   };
 }
 

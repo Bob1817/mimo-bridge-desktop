@@ -41,7 +41,6 @@ export async function initApp() {
   mimo.onLogEntry((entry: LogEntry) => addLogEntry(entry));
   mimo.onUpdateStatus((data: unknown) => setUpdateInfo(data as Record<string, unknown>));
 
-  // Poll status
   setInterval(async () => {
     const s = await mimo.getStatus();
     setGateway(s.running, s.port);
@@ -49,25 +48,40 @@ export async function initApp() {
 }
 
 export async function saveConfig(patch: Record<string, unknown>) {
-  const result = await mimo.saveConfig(patch);
-  useStore.getState().setConfig(result);
-  if (result.providers) useStore.getState().setProviders(result.providers as Provider[]);
-  if (result.modelMappings) useStore.getState().setModelMappings(result.modelMappings as ModelMapping[]);
-  useStore.getState().showToast("配置已保存");
+  try {
+    const result = await mimo.saveConfig(patch);
+    useStore.getState().setConfig(result);
+    if (result.providers) useStore.getState().setProviders(result.providers as Provider[]);
+    if (result.modelMappings) useStore.getState().setModelMappings(result.modelMappings as ModelMapping[]);
+    useStore.getState().showToast("配置已保存");
+  } catch (err) {
+    console.error("saveConfig failed:", err);
+    useStore.getState().showToast("保存失败");
+  }
 }
 
 export async function saveProviders(providers: Provider[]) {
-  const result = await mimo.saveConfig({ providers });
-  useStore.getState().setConfig(result);
-  useStore.getState().setProviders(providers);
-  useStore.getState().showToast("服务商已保存");
+  try {
+    const result = await mimo.saveConfig({ providers });
+    useStore.getState().setConfig(result);
+    useStore.getState().setProviders(providers);
+    useStore.getState().showToast("服务商已保存");
+  } catch (err) {
+    console.error("saveProviders failed:", err);
+    useStore.getState().showToast("保存失败");
+  }
 }
 
 export async function saveMappings(mappings: ModelMapping[]) {
-  const result = await mimo.saveConfig({ modelMappings: mappings });
-  useStore.getState().setConfig(result);
-  useStore.getState().setModelMappings(mappings);
-  useStore.getState().showToast("模型映射已保存");
+  try {
+    const result = await mimo.saveConfig({ modelMappings: mappings });
+    useStore.getState().setConfig(result);
+    useStore.getState().setModelMappings(mappings);
+    useStore.getState().showToast("模型映射已保存");
+  } catch (err) {
+    console.error("saveMappings failed:", err);
+    useStore.getState().showToast("保存失败");
+  }
 }
 
 export async function startGateway() {
