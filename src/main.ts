@@ -90,10 +90,16 @@ async function stopGateway() {
 
 ipcMain.handle("config:get", () => publicConfig());
 ipcMain.handle("config:save", (_e, payload) => {
-  logger.info("Config save requested");
-  const saved = saveConfig(payload || {});
-  logger.info("Config saved", { providers: saved.providers.length, mappings: saved.modelMappings.length });
-  return publicConfig(saved);
+  try {
+    logger.info("Config save requested");
+    const saved = saveConfig(payload || {});
+    logger.info("Config saved", { providers: saved.providers.length, mappings: saved.modelMappings.length });
+    return publicConfig(saved);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error(`Config save failed: ${msg}`);
+    throw new Error(`Config save failed: ${msg}`);
+  }
 });
 ipcMain.handle("gateway:start", () => startGateway());
 ipcMain.handle("gateway:stop", () => stopGateway());

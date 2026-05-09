@@ -54,9 +54,10 @@ export async function saveConfig(patch: Record<string, unknown>) {
     if (result.providers) useStore.getState().setProviders(result.providers as Provider[]);
     if (result.modelMappings) useStore.getState().setModelMappings(result.modelMappings as ModelMapping[]);
     useStore.getState().showToast("配置已保存");
-  } catch (err) {
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
     console.error("saveConfig failed:", err);
-    useStore.getState().showToast("保存失败");
+    useStore.getState().showToast(`保存失败: ${msg}`);
   }
 }
 
@@ -66,9 +67,10 @@ export async function saveProviders(providers: Provider[]) {
     useStore.getState().setConfig(result);
     useStore.getState().setProviders(providers);
     useStore.getState().showToast("服务商已保存");
-  } catch (err) {
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
     console.error("saveProviders failed:", err);
-    useStore.getState().showToast("保存失败");
+    useStore.getState().showToast(`保存失败: ${msg}`);
   }
 }
 
@@ -78,9 +80,10 @@ export async function saveMappings(mappings: ModelMapping[]) {
     useStore.getState().setConfig(result);
     useStore.getState().setModelMappings(mappings);
     useStore.getState().showToast("模型映射已保存");
-  } catch (err) {
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
     console.error("saveMappings failed:", err);
-    useStore.getState().showToast("保存失败");
+    useStore.getState().showToast(`保存失败: ${msg}`);
   }
 }
 

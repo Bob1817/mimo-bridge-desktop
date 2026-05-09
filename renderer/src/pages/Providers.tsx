@@ -7,6 +7,14 @@ export default function Providers() {
   const [editing, setEditing] = useState<Provider | null>(null);
 
   function handleSave(p: Provider) {
+    if (!p.name.trim()) {
+      useStore.getState().showToast("服务商名称不能为空");
+      return;
+    }
+    if (!p.baseUrl.trim()) {
+      useStore.getState().showToast("基础 URL 不能为空");
+      return;
+    }
     const next = providers.map((x) => (x.name === p.name ? p : x));
     if (!next.find((x) => x.name === p.name)) next.push(p);
     saveProviders(next);
