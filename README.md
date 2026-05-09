@@ -9,10 +9,29 @@
 - 自动写入 Codex 配置：`~/.codex/config.toml`
 - 自动写入 Codex 环境变量到 `~/.zshrc` 或 `~/.bash_profile`
 
-## 安装
+## 下载安装
+
+从 [GitHub Releases](https://github.com/Bob1817/mimo-bridge-desktop/releases) 下载最新版本：
+
+- **macOS (Apple Silicon)**: 下载 `.dmg` 文件，双击打开后将 `MIMO Bridge` 拖入「应用程序」
+
+### macOS 提示"已损坏"的解决方法
+
+由于应用未经 Apple 签名，macOS 可能提示「"MIMO Bridge"已损坏，无法打开」。解决方法（二选一）：
+
+**方法一：** 右键点击应用 → 选择「打开」→ 在弹窗中再次点击「打开」
+
+**方法二：** 打开终端执行：
 
 ```bash
-cd mimo-bridge-desktop-v2-codex
+sudo xattr -r -d com.apple.quarantine "/Applications/MIMO Bridge.app"
+```
+
+## 从源码运行
+
+```bash
+git clone https://github.com/Bob1817/mimo-bridge-desktop.git
+cd mimo-bridge-desktop
 npm install
 npm start
 ```
