@@ -1,4 +1,7 @@
 node_modules
 dist
+renderer/node_modules
+renderer/dist
 .env
 .DS_Store
+*.tgz

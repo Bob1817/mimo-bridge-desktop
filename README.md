@@ -1,13 +1,15 @@
-# MIMO Bridge Desktop V2
+# MIMO Bridge Desktop
 
-这是一个可视化桌面代理工具，支持：
+本地 AI 编程代理网关，将 AI 编程工具（Claude Code、Cursor 等）的请求转发到自定义服务商（MIMO、DeepSeek、Spark、通义千问等），支持自动模型名称映射和流式响应。
 
-- Claude Code / Anthropic 兼容代理
-- Codex / OpenAI 兼容代理
-- 在工具中切换 Claude Code 模式和 Codex 模式
-- 自动写入 Claude Code 配置：`~/.claude/settings.json`
-- 自动写入 Codex 配置：`~/.codex/config.toml`
-- 自动写入 Codex 环境变量到 `~/.zshrc` 或 `~/.bash_profile`
+## 功能
+
+- **多服务商支持**：配置多个 AI 服务商，统一管理 API Key
+- **模型映射**：将前端模型名称（如 `claude-sonnet-4-20250514`）映射到实际模型（如 `mimo-v2.5-pro`）
+- **格式兼容**：同时支持 OpenAI 和 Anthropic 协议格式，自动转换
+- **流式传输**：完整支持 SSE 流式响应
+- **日志管理**：按级别过滤、搜索，日志文件按天分割持久化
+- **自动更新**：内置应用自动更新机制
 
 ## 下载安装
 
@@ -33,7 +35,7 @@ sudo xattr -r -d com.apple.quarantine "/Applications/MIMO Bridge.app"
 git clone https://github.com/Bob1817/mimo-bridge-desktop.git
 cd mimo-bridge-desktop
 npm install
-npm start
+npm run dev
 ```
 
 如 Electron 下载慢：
@@ -43,88 +45,80 @@ npm config set registry https://registry.npmmirror.com
 export ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/
 rm -rf node_modules package-lock.json
 npm install
-npm start
+npm run dev
 ```
 
-## Claude Code 使用方式
+## 使用方式
 
-在「统一配置」里填写：
+### 1. 配置服务商
 
-```txt
-Claude/MIMO Base URL
-Claude/MIMO API Key
-上游真实模型：mimo-v2.5-pro
-Claude Code 侧模型：claude-sonnet-4-20250514
+在「服务商」页面添加你的 API 服务商，填写名称、类型、Base URL 和 API Key。
+
+### 2. 配置模型映射
+
+在「模型映射」页面设置前端模型名到实际模型的映射关系。例如：
+
+| 前端模型 | 服务商 | 实际模型 |
+|---|---|---|
+| claude-sonnet-4-20250514 | mimo | mimo-v2.5-pro |
+| deepseek-r1 | deepseek | deepseek-reasoner |
+
+### 3. 启动网关
+
+在「仪表盘」页面点击「启动网关」，默认监听 `8788` 端口。
+
+### 4. 配置 AI 工具
+
+**Claude Code：** 在项目根目录创建 `.claude/settings.json`：
+
+```json
+{
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "sk-local",
+    "ANTHROPIC_BASE_URL": "http://localhost:8788",
+    "ANTHROPIC_MODEL": "claude-sonnet-4-20250514"
+  }
+}
 ```
 
-然后在「Claude Code」页点击：
+**Cursor：** 在 Cursor 设置中配置：
 
-```txt
-一键写入
+```json
+{
+  "apiKey": "sk-local",
+  "baseUrl": "http://localhost:8788/v1",
+  "model": "claude-sonnet-4-20250514"
+}
 ```
 
-Claude Code 内使用：
+配置片段可在仪表盘页面直接复制。
 
-```txt
-/model
+## 项目结构
+
+```
+src/
+  main.ts              # Electron 主进程
+  preload.ts           # IPC 桥接
+  gateway/
+    config.ts          # 配置管理
+    server.ts          # Express 网关服务
+    proxy.ts           # 请求代理
+    converter.ts       # 协议格式转换
+    port.ts            # 端口检测
+    logger.ts          # 日志管理
+renderer/src/
+  App.tsx              # 根组件
+  store.ts             # 状态管理 (Zustand)
+  api.ts               # IPC 通信
+  components/Layout.tsx
+  pages/
+    Dashboard.tsx      # 仪表盘
+    Providers.tsx      # 服务商管理
+    ModelMap.tsx       # 模型映射
+    Logs.tsx           # 日志查看
+    Settings.tsx       # 设置
 ```
 
-选择：
+## 日志
 
-```txt
-claude-sonnet-4-20250514
-```
-
-不要直接选择 `mimo-v2.5-pro`。
-
-## Codex 使用方式
-
-在「统一配置」里填写：
-
-```txt
-Codex 上游 Base URL
-Codex API Key
-Codex 模型
-Codex Provider ID
-```
-
-然后在「Codex」页点击：
-
-```txt
-一键写入 config.toml
-写入环境变量
-```
-
-重新打开终端，或执行：
-
-```bash
-source ~/.zshrc
-```
-
-然后启动：
-
-```bash
-codex
-```
-
-## Codex 生成的配置示例
-
-```toml
-model = "gpt-5-codex"
-model_provider = "mimo_proxy"
-
-[model_providers.mimo_proxy]
-name = "MIMO Bridge Proxy"
-base_url = "http://localhost:8787/codex/v1"
-env_key = "MIMO_BRIDGE_CODEX_API_KEY"
-wire_api = "responses"
-request_max_retries = 4
-stream_max_retries = 10
-stream_idle_timeout_ms = 300000
-```
-
-## 注意
-
-- Codex 的 `env_key` 是环境变量名，不是 API Key 明文。
-- 如 Codex 上游只支持 Chat Completions，可把 `wire_api` 改为 `chat`。
-- 默认推荐 `responses`。
+日志文件保存在 `~/.mimo-bridge-desktop/logs/` 目录下，按天分割（`YYYY-MM-DD.log`）。可在应用内「日志」页面按级别（INFO/WARN/ERROR）过滤和搜索。
