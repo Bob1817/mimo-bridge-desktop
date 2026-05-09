@@ -46,8 +46,16 @@
     "linux": { "target": ["AppImage"] },
     "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true },
     "files": [
-      "dist/**/*",
-      "package.json"
+      "dist/main.js",
+      "dist/preload.js",
+      "dist/gateway/**/*",
+      "dist/renderer/**/*",
+      "package.json",
+      "!dist/mac",
+      "!dist/mac-arm64",
+      "!dist/*.dmg",
+      "!dist/*.blockmap",
+      "!dist/*.zip"
     ]
   },
   "engines": { "node": ">=18" }
