@@ -24,26 +24,38 @@ const mimo = (window as unknown as { mimo: MimoBridge }).mimo;
 export async function initApp() {
   const { setConfig, setProviders, setModelMappings, setGateway, setLogEntries, setVersion, setUpdateInfo, addLogEntry } = useStore.getState();
 
-  const config = await mimo.getConfig();
-  setConfig(config);
-  setProviders((config.providers as Provider[]) || []);
-  setModelMappings((config.modelMappings as ModelMapping[]) || []);
-
-  const status = await mimo.getStatus();
-  setGateway(status.running, status.port);
-
-  const recentLogs = await mimo.getLogs(200);
-  setLogEntries(recentLogs);
-
-  const v = await mimo.getAppVersion();
-  setVersion(v);
-
+  // Register listeners first — these must always run
   mimo.onLogEntry((entry: LogEntry) => addLogEntry(entry));
   mimo.onUpdateStatus((data: unknown) => setUpdateInfo(data as Record<string, unknown>));
 
+  // Each init step is independent; one failure shouldn't block others
+  try {
+    const config = await mimo.getConfig();
+    setConfig(config);
+    setProviders((config.providers as Provider[]) || []);
+    setModelMappings((config.modelMappings as ModelMapping[]) || []);
+  } catch (e) { console.error("initApp: getConfig failed", e); }
+
+  try {
+    const status = await mimo.getStatus();
+    setGateway(status.running, status.port);
+  } catch (e) { console.error("initApp: getStatus failed", e); }
+
+  try {
+    const recentLogs = await mimo.getLogs(200);
+    setLogEntries(recentLogs);
+  } catch (e) { console.error("initApp: getLogs failed", e); }
+
+  try {
+    const v = await mimo.getAppVersion();
+    setVersion(v);
+  } catch (e) { console.error("initApp: getAppVersion failed", e); }
+
   setInterval(async () => {
-    const s = await mimo.getStatus();
-    setGateway(s.running, s.port);
+    try {
+      const s = await mimo.getStatus();
+      setGateway(s.running, s.port);
+    } catch { /* ignore polling errors */ }
   }, 3000);
 }
 
