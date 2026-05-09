@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MIMO Bridge</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="side">
+      <div class="brand">
+        <div class="logo">M</div>
+        <div>
+          <div class="brand-title">MIMO Bridge</div>
+          <div class="brand-sub">Claude Code / Codex 代理工具</div>
+        </div>
+      </div>
+
+      <nav>
+        <button class="nav-item active" data-tab="dashboard">状态面板</button>
+        <button class="nav-item" data-tab="config">统一配置</button>
+        <button class="nav-item" data-tab="claude">Claude Code</button>
+        <button class="nav-item" data-tab="codex">Codex</button>
+        <button class="nav-item" data-tab="logs">运行日志</button>
+      </nav>
+
+      <div class="side-card">
+        <div class="tiny">当前模式</div>
+        <div class="mono" id="sideMode">Claude Code</div>
+        <div class="tiny mt8">本地服务</div>
+        <div class="mono" id="sideBaseUrl">http://localhost:8787</div>
+        <div class="tiny mt8">版本</div>
+        <div class="mono" id="sideVersion">-</div>
+        <div id="updateBanner" class="update-banner" style="display:none">
+          <span id="updateBannerText">有新版本可用</span>
+          <button class="update-btn" id="updateActionBtn">更新</button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="topbar">
+        <div>
+          <h1 id="pageTitle">状态面板</h1>
+          <p id="pageDesc">在 Claude Code 和 Codex 两种配置中切换使用。</p>
+        </div>
+        <div class="status-pill" id="runningPill"><span class="dot"></span><span>检测中</span></div>
+      </section>
+
+      <section class="tab active" id="tab-dashboard">
+        <div class="hero-grid">
+          <div class="card hero-card">
+            <div class="eyebrow">运行状态</div>
+            <h2 id="statusTitle">中转服务准备中</h2>
+            <p id="statusDesc">一个工具同时管理 Claude Code 代理和 Codex 代理。</p>
+
+            <div class="client-switch">
+              <button class="client-option active" id="clientClaude">Claude Code 模式</button>
+              <button class="client-option" id="clientCodex">Codex 模式</button>
+            </div>
+
+            <div class="action-row mt16">
+              <button class="primary" id="startBtn">启动中转</button>
+              <button class="secondary" id="stopBtn">停止中转</button>
+              <button class="secondary" id="testCurrentBtn">测试当前模式上游</button>
+            </div>
+
+            <div class="result-box" id="testResult">测试结果会显示在这里。</div>
+          </div>
+
+          <div class="card">
+            <div class="eyebrow">当前代理路径</div>
+            <div class="flow" id="flowBox"></div>
+          </div>
+        </div>
+
+        <div class="card mt">
+          <div class="eyebrow">快速操作</div>
+          <div class="quick-grid">
+            <button class="quick" id="quickWriteCurrent"><b>一键写入当前模式配置</b><span>Claude 写 settings.json；Codex 写 config.toml</span></button>
+            <button class="quick" id="quickCopyCurrent"><b>复制当前模式配置</b><span>复制到剪贴板</span></button>
+            <button class="quick" id="quickCopyBase"><b>复制当前 Base URL</b><span id="quickBaseUrl">http://localhost:8787/anthropic</span></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab" id="tab-config">
+        <div class="card">
+          <div class="section-head">
+            <div><div class="eyebrow">统一配置</div><h2>Claude Code + Codex</h2></div>
+            <button class="primary" id="saveBtn">保存配置</button>
+          </div>
+
+          <div class="form-grid">
+            <label class="field"><span>本地端口</span><input id="port" type="number" placeholder="8787" /></label>
+            <label class="field"><span>默认模式</span><select id="activeClient"><option value="claude">Claude Code</option><option value="codex">Codex</option></select></label>
+
+            <div class="form-title">Claude Code / Anthropic 兼容配置</div>
+            <label class="field wide"><span>Claude/MIMO Base URL</span><input id="upstreamBaseUrl" placeholder="https://token-plan-cn.xiaomimimo.com/anthropic" /></label>
+            <label class="field wide"><span>Claude/MIMO API Key</span><input id="upstreamApiKey" type="password" placeholder="填写 MIMO Key" /></label>
+            <label class="field"><span>上游真实模型</span><input id="upstreamModel" placeholder="mimo-v2.5-pro" /></label>
+            <label class="field"><span>Claude Code 侧模型</span><input id="claudeModel" placeholder="claude-sonnet-4-20250514" /></label>
+            <label class="field"><span>兼容清洗</span><select id="compatClean"><option value="true">开启：推荐</option><option value="false">关闭</option></select></label>
+
+            <div class="form-title">Codex / OpenAI 兼容配置</div>
+            <label class="field wide"><span>Codex 上游 Base URL</span><input id="codexBaseUrl" placeholder="https://api.openai.com/v1 或第三方 OpenAI 兼容地址" /></label>
+            <label class="field wide"><span>Codex API Key</span><input id="codexApiKey" type="password" placeholder="填写 Codex/OpenAI 兼容接口 Key" /></label>
+            <label class="field"><span>Codex 模型</span><input id="codexModel" placeholder="gpt-5-codex / gpt-5.5 / 第三方模型名" /></label>
+            <label class="field"><span>Codex Provider ID</span><input id="codexProviderId" placeholder="mimo_proxy" /></label>
+            <label class="field"><span>Codex 环境变量名</span><input id="codexEnvKey" placeholder="MIMO_BRIDGE_CODEX_API_KEY" /></label>
+            <label class="field"><span>Codex wire_api</span><select id="codexWireApi"><option value="responses">responses：推荐</option><option value="chat">chat</option></select></label>
+            <label class="field"><span>Codex 使用本地代理</span><select id="codexUseLocalProxy"><option value="true">开启：Codex → 本工具 → 上游</option><option value="false">关闭：Codex → 上游</option></select></label>
+          </div>
+
+          <div class="hint">Codex 配置文件路径是 <code>~/.codex/config.toml</code>；<code>env_key</code> 指向环境变量，不直接写入明文 Key。</div>
+        </div>
+      </section>
+
+      <section class="tab" id="tab-claude">
+        <div class="card">
+          <div class="section-head">
+            <div><div class="eyebrow">Claude Code</div><h2>写入 ~/.claude/settings.json</h2></div>
+            <div class="action-row"><button class="primary" id="writeClaudeBtn">一键写入</button><button class="secondary" id="copyClaudeBtn">复制配置</button><button class="secondary" id="testClaudeBtn">测试上游</button></div>
+          </div>
+          <pre class="code" id="claudeSnippet"></pre>
+          <div class="result-box" id="claudeTestResult">Claude/MIMO 测试结果会显示在这里。</div>
+        </div>
+      </section>
+
+      <section class="tab" id="tab-codex">
+        <div class="card">
+          <div class="section-head">
+            <div><div class="eyebrow">Codex</div><h2>写入 ~/.codex/config.toml</h2></div>
+            <div class="action-row"><button class="primary" id="writeCodexBtn">一键写入 config.toml</button><button class="secondary" id="writeCodexEnvBtn">写入环境变量</button><button class="secondary" id="copyCodexBtn">复制配置</button><button class="secondary" id="testCodexBtn">测试上游</button></div>
+          </div>
+          <div class="split-grid">
+            <div><div class="tiny">config.toml</div><pre class="code compact" id="codexSnippet"></pre></div>
+            <div><div class="tiny">Shell 环境变量</div><pre class="code compact" id="codexEnvSnippet"></pre></div>
+          </div>
+          <div class="result-box" id="codexTestResult">Codex 测试结果会显示在这里。</div>
+          <div class="hint">写入环境变量后，需要重新打开终端，或执行 <code>source ~/.zshrc</code>。</div>
+        </div>
+      </section>
+
+      <section class="tab" id="tab-logs">
+        <div class="card">
+          <div class="section-head"><div><div class="eyebrow">运行日志</div><h2>最近 100 条日志</h2></div><button class="secondary" id="refreshLogsBtn">刷新</button></div>
+          <div class="logs" id="logsBox">暂无日志。</div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script src="./renderer.js"></script>
+</body>
+</html>

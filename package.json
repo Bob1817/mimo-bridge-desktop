@@ -1,0 +1,64 @@
+{
+  "name": "mimo-bridge-desktop",
+  "version": "2.1.0",
+  "description": "Visual desktop proxy for Claude Code and Codex",
+  "author": "Bob1817",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Bob1817/mimo-bridge-desktop.git"
+  },
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "server": "node bridge-server.js",
+    "build": "electron-builder --publish never",
+    "build:publish": "electron-builder --publish always"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "electron-updater": "^6.3.9",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "electron": "^30.0.9",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.mimo.bridge-desktop",
+    "productName": "MIMO Bridge",
+    "publish": {
+      "provider": "github",
+      "owner": "Bob1817",
+      "repo": "mimo-bridge-desktop"
+    },
+    "mac": {
+      "target": ["dmg", "zip"]
+    },
+    "win": {
+      "target": ["nsis"]
+    },
+    "linux": {
+      "target": ["AppImage"]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "files": [
+      "main.js",
+      "preload.cjs",
+      "bridge-core.js",
+      "bridge-server-factory.js",
+      "bridge-server.js",
+      "renderer/**/*",
+      "package.json"
+    ],
+    "extraResources": []
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
